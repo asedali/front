@@ -1,0 +1,829 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>NooraSense - Material Analysis</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        @keyframes spectralWave {
+            0% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+            100% { background-position: 0% 50%; }
+        }
+        
+        .spectral-animation {
+            background: linear-gradient(90deg, #3b82f6, #8b5cf6, #ec4899, #f97316, #f59e0b);
+            background-size: 400% 400%;
+            animation: spectralWave 8s ease infinite;
+        }
+        
+        .progress-ring {
+            transition: stroke-dashoffset 0.5s ease;
+            transform: rotate(-90deg);
+            transform-origin: 50% 50%;
+        }
+        
+        .parameter-pulse {
+            animation: pulse 2s infinite;
+        }
+        
+        @keyframes pulse {
+            0% { opacity: 1; }
+            50% { opacity: 0.5; }
+            100% { opacity: 1; }
+        }
+        
+        .slide-in {
+            animation: slideIn 0.3s ease-out;
+        }
+        
+        @keyframes slideIn {
+            from { transform: translateX(100%); }
+            to { transform: translateX(0); }
+        }
+        
+        .nutrient-countup {
+            transition: all 0.5s ease-out;
+        }
+        
+        .wavelength-graph {
+            background: linear-gradient(90deg, #3b82f6 0%, #8b5cf6 30%, #ec4899 60%, #f97316 90%);
+        }
+        
+        .progress-container {
+            position: relative;
+            width: 160px;
+            height: 160px;
+            margin: 0 auto;
+        }
+        
+        .progress-text {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            text-align: center;
+            width: 100%;
+        }
+        
+        .chat-container {
+            height: 300px;
+            overflow-y: auto;
+            scrollbar-width: thin;
+            scrollbar-color: #3b82f6 #f1f1f1;
+        }
+        
+        .chat-container::-webkit-scrollbar {
+            width: 6px;
+        }
+        
+        .chat-container::-webkit-scrollbar-track {
+            background: #f1f1f1;
+            border-radius: 10px;
+        }
+        
+        .chat-container::-webkit-scrollbar-thumb {
+            background-color: #3b82f6;
+            border-radius: 10px;
+        }
+        
+        .chat-bubble {
+            max-width: 80%;
+            padding: 10px 14px;
+            border-radius: 18px;
+            margin-bottom: 8px;
+            position: relative;
+            word-wrap: break-word;
+        }
+        
+        .ai-bubble {
+            background-color: #f3f4f6;
+            border-top-left-radius: 4px;
+            align-self: flex-start;
+        }
+        
+        .user-bubble {
+            background-color: #3b82f6;
+            color: white;
+            border-top-right-radius: 4px;
+            align-self: flex-end;
+        }
+    </style>
+</head>
+<body class="bg-gray-50 text-gray-800 font-sans">
+    <div class="flex h-screen overflow-hidden">
+        <!-- Sidebar -->
+        <div class="w-20 bg-white shadow-md flex flex-col items-center py-6">
+            <div class="mb-8">
+                <div class="w-12 h-12 bg-blue-100 rounded-xl flex items-center justify-center text-blue-600">
+                    <i class="fas fa-seedling text-2xl"></i>
+                </div>
+            </div>
+            
+            <button class="w-12 h-12 mb-4 rounded-xl flex items-center justify-center text-gray-500 hover:bg-blue-50 hover:text-blue-600 transition">
+                <i class="fas fa-home text-xl"></i>
+            </button>
+            
+            <button class="w-12 h-12 mb-4 rounded-xl flex items-center justify-center text-gray-500 hover:bg-blue-50 hover:text-blue-600 transition">
+                <i class="fas fa-history text-xl"></i>
+            </button>
+            
+            <button class="w-12 h-12 mb-4 rounded-xl flex items-center justify-center text-gray-500 hover:bg-blue-50 hover:text-blue-600 transition">
+                <i class="fas fa-chart-bar text-xl"></i>
+            </button>
+            
+            <button class="w-12 h-12 mb-4 rounded-xl flex items-center justify-center text-gray-500 hover:bg-blue-50 hover:text-blue-600 transition">
+                <i class="fas fa-cog text-xl"></i>
+            </button>
+            
+            <div class="mt-auto">
+                <div class="w-12 h-12 rounded-xl flex items-center justify-center bg-green-100 text-green-600">
+                    <i class="fas fa-plug text-xl"></i>
+                </div>
+                <div class="text-xs text-center mt-1 text-green-600">Connected</div>
+            </div>
+        </div>
+        
+        <!-- Main Content -->
+        <div class="flex-1 flex flex-col overflow-hidden">
+            <!-- Top Bar -->
+            <div class="bg-white shadow-sm p-4 flex justify-between items-center">
+                <h1 class="text-xl font-semibold text-gray-800">Material Analysis</h1>
+                <div class="flex items-center space-x-4">
+                    <div class="flex items-center">
+                        <div class="w-3 h-3 rounded-full bg-green-500 mr-2"></div>
+                        <span class="text-sm text-gray-600">85% battery</span>
+                    </div>
+                    <button class="w-10 h-10 rounded-full bg-gray-100 flex items-center justify-center">
+                        <i class="fas fa-user text-gray-600"></i>
+                    </button>
+                </div>
+            </div>
+            
+            <!-- Dynamic Content Area -->
+            <div class="flex-1 overflow-y-auto p-6">
+                <!-- Connection Status -->
+                <div id="connectionPanel" class="bg-white rounded-xl shadow-sm p-6 mb-6">
+                    <div class="flex items-center mb-4">
+                        <div class="w-12 h-12 rounded-xl bg-blue-100 flex items-center justify-center text-blue-600 mr-4">
+                            <i class="fas fa-plug text-xl"></i>
+                        </div>
+                        <div>
+                            <h2 class="font-semibold text-lg">Spectrometer Connected</h2>
+                            <p class="text-gray-500 text-sm">USB-C device ready for analysis</p>
+                        </div>
+                    </div>
+                    <div class="bg-blue-50 rounded-lg p-4">
+                        <div class="flex justify-between items-center mb-2">
+                            <span class="text-sm font-medium text-blue-800">Device Status</span>
+                            <span class="text-xs px-2 py-1 bg-blue-100 text-blue-800 rounded-full">Charging</span>
+                        </div>
+                        <div class="w-full bg-blue-100 rounded-full h-2">
+                            <div class="bg-blue-600 h-2 rounded-full" style="width: 85%"></div>
+                        </div>
+                        <div class="flex justify-between mt-1">
+                            <span class="text-xs text-blue-800">Battery: 85%</span>
+                            <span class="text-xs text-blue-800">Firmware: v2.1.4</span>
+                        </div>
+                    </div>
+                    <button id="startAnalysisBtn" class="w-full mt-6 bg-blue-600 hover:bg-blue-700 text-white py-3 px-4 rounded-xl font-medium transition flex items-center justify-center">
+                        <i class="fas fa-play mr-2"></i> Start Analysis
+                    </button>
+                </div>
+                
+                <!-- Analysis Progress -->
+                <div id="analysisPanel" class="hidden bg-white rounded-xl shadow-sm p-6 mb-6">
+                    <div class="text-center mb-6">
+                        <h2 class="font-semibold text-lg mb-1">Analyzing Sample</h2>
+                        <p class="text-gray-500 text-sm">Place the spectrometer firmly on the material</p>
+                    </div>
+                    
+                    <div class="progress-container mb-6">
+                        <svg class="w-full h-full">
+                            <circle
+                                class="text-gray-200"
+                                stroke-width="8"
+                                stroke="currentColor"
+                                fill="transparent"
+                                r="64"
+                                cx="80"
+                                cy="80"
+                            />
+                            <circle
+                                class="progress-ring text-blue-600"
+                                stroke-width="8"
+                                stroke-linecap="round"
+                                stroke="currentColor"
+                                fill="transparent"
+                                r="64"
+                                cx="80"
+                                cy="80"
+                                stroke-dasharray="402"
+                                stroke-dashoffset="402"
+                                id="progressCircle"
+                            />
+                        </svg>
+                        <div class="progress-text">
+                            <div id="progressPercent" class="text-3xl font-bold text-blue-600">0%</div>
+                            <div class="text-xs text-gray-500">COMPLETE</div>
+                        </div>
+                    </div>
+                    
+                    <div class="spectral-animation h-2 rounded-full mb-4"></div>
+                    
+                    <div class="grid grid-cols-3 gap-4 mb-6">
+                        <div class="bg-gray-50 rounded-lg p-3 text-center">
+                            <div class="text-xs text-gray-500 mb-1">Moisture</div>
+                            <div id="moistureValue" class="font-semibold">--%</div>
+                        </div>
+                        <div class="bg-gray-50 rounded-lg p-3 text-center">
+                            <div class="text-xs text-gray-500 mb-1">Acidity</div>
+                            <div id="acidityValue" class="font-semibold">--</div>
+                        </div>
+                        <div class="bg-gray-50 rounded-lg p-3 text-center">
+                            <div class="text-xs text-gray-500 mb-1">Sugar</div>
+                            <div id="sugarValue" class="font-semibold">--g</div>
+                        </div>
+                    </div>
+                    
+                    <div class="wavelength-graph h-32 rounded-xl mb-4 relative overflow-hidden">
+                        <div class="absolute inset-0 bg-gradient-to-r from-transparent to-white opacity-50"></div>
+                        <div class="absolute bottom-0 left-0 right-0 h-8 bg-gradient-to-t from-gray-900 to-transparent opacity-20"></div>
+                        <div class="absolute bottom-0 left-0 w-full h-px bg-gray-300"></div>
+                        <div class="absolute bottom-0 left-0 right-0 flex justify-between px-2">
+                            <span class="text-xs text-white">900nm</span>
+                            <span class="text-xs text-white">1300nm</span>
+                            <span class="text-xs text-white">1700nm</span>
+                        </div>
+                    </div>
+                    
+                    <button id="cancelAnalysisBtn" class="w-full mt-4 border border-gray-300 hover:bg-gray-50 text-gray-700 py-3 px-4 rounded-xl font-medium transition">
+                        Cancel Analysis
+                    </button>
+                </div>
+                
+                <!-- Material Detection -->
+                <div id="detectionPanel" class="hidden bg-white rounded-xl shadow-sm p-6 mb-6">
+                    <div class="text-center mb-6">
+                        <h2 class="font-semibold text-lg mb-1">Material Detected</h2>
+                        <p class="text-gray-500 text-sm">AI analysis complete</p>
+                    </div>
+                    
+                    <div class="bg-blue-50 rounded-xl p-4 mb-6">
+                        <div class="flex items-center">
+                            <div class="w-16 h-16 rounded-lg bg-white flex items-center justify-center shadow-sm mr-4">
+                                <i class="fas fa-apple-alt text-3xl text-red-500"></i>
+                            </div>
+                            <div>
+                                <h3 class="font-semibold">Apple (Red Delicious)</h3>
+                                <div class="flex items-center">
+                                    <div class="w-24 bg-gray-200 rounded-full h-2 mr-2">
+                                        <div class="bg-green-500 h-2 rounded-full" style="width: 92%"></div>
+                                    </div>
+                                    <span class="text-xs text-gray-600">92% confidence</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="grid grid-cols-3 gap-4 mb-6">
+                        <div class="bg-gray-50 rounded-lg p-3 text-center">
+                            <div class="text-xs text-gray-500 mb-1">Moisture</div>
+                            <div class="font-semibold">87.3%</div>
+                        </div>
+                        <div class="bg-gray-50 rounded-lg p-3 text-center">
+                            <div class="text-xs text-gray-500 mb-1">Acidity</div>
+                            <div class="font-semibold">3.8</div>
+                        </div>
+                        <div class="bg-gray-50 rounded-lg p-3 text-center">
+                            <div class="text-xs text-gray-500 mb-1">Sugar</div>
+                            <div class="font-semibold">11.2g</div>
+                        </div>
+                    </div>
+                    
+                    <div class="flex space-x-3 mb-6">
+                        <button id="confirmMaterialBtn" class="flex-1 bg-blue-600 hover:bg-blue-700 text-white py-3 px-4 rounded-xl font-medium transition">
+                            <i class="fas fa-check mr-2"></i> Confirm
+                        </button>
+                        <button id="editMaterialBtn" class="flex-1 border border-gray-300 hover:bg-gray-50 text-gray-700 py-3 px-4 rounded-xl font-medium transition">
+                            <i class="fas fa-edit mr-2"></i> Edit
+                        </button>
+                    </div>
+                    
+                    <div class="bg-yellow-50 border-l-4 border-yellow-400 p-4 mb-6">
+                        <div class="flex">
+                            <div class="flex-shrink-0">
+                                <i class="fas fa-exclamation-circle text-yellow-400"></i>
+                            </div>
+                            <div class="ml-3">
+                                <p class="text-sm text-yellow-700">
+                                    Potential pesticide residue detected (0.12ppm). Tap for details.
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Results Panel -->
+                <div id="resultsPanel" class="hidden bg-white rounded-xl shadow-sm overflow-hidden">
+                    <div class="p-6">
+                        <div class="flex justify-between items-center mb-6">
+                            <div>
+                                <h2 class="font-semibold text-lg">Analysis Report</h2>
+                                <p class="text-gray-500 text-sm">Red Delicious Apple • 2 minutes ago</p>
+                            </div>
+                            <div class="flex space-x-2">
+                                <button class="w-10 h-10 rounded-full bg-gray-100 flex items-center justify-center text-gray-600 hover:bg-gray-200">
+                                    <i class="fas fa-share-alt"></i>
+                                </button>
+                                <button class="w-10 h-10 rounded-full bg-gray-100 flex items-center justify-center text-gray-600 hover:bg-gray-200">
+                                    <i class="fas fa-download"></i>
+                                </button>
+                            </div>
+                        </div>
+                        
+                        <div class="flex mb-6">
+                            <div class="w-16 h-16 rounded-lg bg-blue-50 flex items-center justify-center shadow-sm mr-4">
+                                <i class="fas fa-apple-alt text-3xl text-red-500"></i>
+                            </div>
+                            <div>
+                                <h3 class="font-semibold">Red Delicious Apple</h3>
+                                <p class="text-gray-500 text-sm">Malus domestica</p>
+                                <div class="flex items-center mt-1">
+                                    <div class="flex items-center text-yellow-500 mr-3">
+                                        <i class="fas fa-star text-sm"></i>
+                                        <i class="fas fa-star text-sm"></i>
+                                        <i class="fas fa-star text-sm"></i>
+                                        <i class="fas fa-star text-sm"></i>
+                                        <i class="fas fa-star-half-alt text-sm"></i>
+                                    </div>
+                                    <span class="text-xs bg-green-100 text-green-800 px-2 py-0.5 rounded-full">92% match</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="border-t border-gray-200 px-6 py-4">
+                        <h3 class="font-medium text-gray-900 mb-3">Nutritional Parameters</h3>
+                        <div class="space-y-4">
+                            <div>
+                                <div class="flex justify-between mb-1">
+                                    <span class="text-sm font-medium text-gray-700">Sugar Content</span>
+                                    <span class="text-sm font-semibold text-blue-600">11.2g</span>
+                                </div>
+                                <div class="w-full bg-gray-200 rounded-full h-1.5">
+                                    <div class="bg-blue-600 h-1.5 rounded-full" style="width: 55%"></div>
+                                </div>
+                            </div>
+                            <div>
+                                <div class="flex justify-between mb-1">
+                                    <span class="text-sm font-medium text-gray-700">Acidity (pH)</span>
+                                    <span class="text-sm font-semibold text-blue-600">3.8</span>
+                                </div>
+                                <div class="w-full bg-gray-200 rounded-full h-1.5">
+                                    <div class="bg-blue-600 h-1.5 rounded-full" style="width: 38%"></div>
+                                </div>
+                            </div>
+                            <div>
+                                <div class="flex justify-between mb-1">
+                                    <span class="text-sm font-medium text-gray-700">Moisture</span>
+                                    <span class="text-sm font-semibold text-blue-600">87.3%</span>
+                                </div>
+                                <div class="w-full bg-gray-200 rounded-full h-1.5">
+                                    <div class="bg-blue-600 h-1.5 rounded-full" style="width: 87%"></div>
+                                </div>
+                            </div>
+                            <div>
+                                <div class="flex justify-between mb-1">
+                                    <span class="text-sm font-medium text-gray-700">Dietary Fiber</span>
+                                    <span class="text-sm font-semibold text-blue-600">2.4g</span>
+                                </div>
+                                <div class="w-full bg-gray-200 rounded-full h-1.5">
+                                    <div class="bg-blue-600 h-1.5 rounded-full" style="width: 40%"></div>
+                                </div>
+                            </div>
+                            <div>
+                                <div class="flex justify-between mb-1">
+                                    <span class="text-sm font-medium text-gray-700">Vitamin C</span>
+                                    <span class="text-sm font-semibold text-blue-600">8.4mg</span>
+                                </div>
+                                <div class="w-full bg-gray-200 rounded-full h-1.5">
+                                    <div class="bg-blue-600 h-1.5 rounded-full" style="width: 42%"></div>
+                                </div>
+                            </div>
+                            <div>
+                                <div class="flex justify-between mb-1">
+                                    <span class="text-sm font-medium text-gray-700">Antioxidants</span>
+                                    <span class="text-sm font-semibold text-blue-600">High</span>
+                                </div>
+                                <div class="w-full bg-gray-200 rounded-full h-1.5">
+                                    <div class="bg-blue-600 h-1.5 rounded-full" style="width: 75%"></div>
+                                </div>
+                            </div>
+                            <div>
+                                <div class="flex justify-between mb-1">
+                                    <span class="text-sm font-medium text-gray-700">Starch</span>
+                                    <span class="text-sm font-semibold text-blue-600">0.5g</span>
+                                </div>
+                                <div class="w-full bg-gray-200 rounded-full h-1.5">
+                                    <div class="bg-blue-600 h-1.5 rounded-full" style="width: 10%"></div>
+                                </div>
+                            </div>
+                            <div>
+                                <div class="flex justify-between mb-1">
+                                    <span class="text-sm font-medium text-gray-700">Protein</span>
+                                    <span class="text-sm font-semibold text-blue-600">0.3g</span>
+                                </div>
+                                <div class="w-full bg-gray-200 rounded-full h-1.5">
+                                    <div class="bg-blue-600 h-1.5 rounded-full" style="width: 15%"></div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="border-t border-gray-200 px-6 py-4">
+                        <h3 class="font-medium text-gray-900 mb-3">Hazard Parameters</h3>
+                        <div class="grid grid-cols-2 gap-4">
+                            <div class="bg-red-50 rounded-lg p-3">
+                                <div class="flex items-center mb-1">
+                                    <div class="w-6 h-6 rounded-full bg-red-100 flex items-center justify-center text-red-600 mr-2">
+                                        <i class="fas fa-exclamation text-xs"></i>
+                                    </div>
+                                    <span class="text-sm font-medium text-red-800">Pesticides</span>
+                                </div>
+                                <div class="text-xs text-red-700">0.12ppm detected (0.1ppm limit)</div>
+                            </div>
+                            <div class="bg-green-50 rounded-lg p-3">
+                                <div class="flex items-center mb-1">
+                                    <div class="w-6 h-6 rounded-full bg-green-100 flex items-center justify-center text-green-600 mr-2">
+                                        <i class="fas fa-check text-xs"></i>
+                                    </div>
+                                    <span class="text-sm font-medium text-green-800">Mycotoxins</span>
+                                </div>
+                                <div class="text-xs text-green-700">No detection</div>
+                            </div>
+                            <div class="bg-green-50 rounded-lg p-3">
+                                <div class="flex items-center mb-1">
+                                    <div class="w-6 h-6 rounded-full bg-green-100 flex items-center justify-center text-green-600 mr-2">
+                                        <i class="fas fa-check text-xs"></i>
+                                    </div>
+                                    <span class="text-sm font-medium text-green-800">Heavy Metals</span>
+                                </div>
+                                <div class="text-xs text-green-700">Below detectable limits</div>
+                            </div>
+                            <div class="bg-green-50 rounded-lg p-3">
+                                <div class="flex items-center mb-1">
+                                    <div class="w-6 h-6 rounded-full bg-green-100 flex items-center justify-center text-green-600 mr-2">
+                                        <i class="fas fa-check text-xs"></i>
+                                    </div>
+                                    <span class="text-sm font-medium text-green-800">Microbial</span>
+                                </div>
+                                <div class="text-xs text-green-700">No contamination</div>
+                            </div>
+                            <div class="bg-green-50 rounded-lg p-3">
+                                <div class="flex items-center mb-1">
+                                    <div class="w-6 h-6 rounded-full bg-green-100 flex items-center justify-center text-green-600 mr-2">
+                                        <i class="fas fa-check text-xs"></i>
+                                    </div>
+                                    <span class="text-sm font-medium text-green-800">Foreign Matter</span>
+                                </div>
+                                <div class="text-xs text-green-700">None detected</div>
+                            </div>
+                            <div class="bg-green-50 rounded-lg p-3">
+                                <div class="flex items-center mb-1">
+                                    <div class="w-6 h-6 rounded-full bg-green-100 flex items-center justify-center text-green-600 mr-2">
+                                        <i class="fas fa-check text-xs"></i>
+                                    </div>
+                                    <span class="text-sm font-medium text-green-800">Artificial Colors</span>
+                                </div>
+                                <div class="text-xs text-green-700">None detected</div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="border-t border-gray-200 px-6 py-4">
+                        <h3 class="font-medium text-gray-900 mb-3">Spectral Signature</h3>
+                        <div class="wavelength-graph h-40 rounded-xl relative overflow-hidden">
+                            <div class="absolute inset-0 bg-gradient-to-r from-transparent to-white opacity-50"></div>
+                            <div class="absolute bottom-0 left-0 right-0 h-8 bg-gradient-to-t from-gray-900 to-transparent opacity-20"></div>
+                            <div class="absolute bottom-0 left-0 w-full h-px bg-gray-300"></div>
+                            <div class="absolute bottom-0 left-0 right-0 flex justify-between px-2">
+                                <span class="text-xs text-white">900nm</span>
+                                <span class="text-xs text-white">1300nm</span>
+                                <span class="text-xs text-white">1700nm</span>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- AI Chatbot Section -->
+                    <div class="border-t border-gray-200 px-6 py-4">
+                        <h3 class="font-medium text-gray-900 mb-3">Ask Noora AI</h3>
+                        
+                        <div id="chatContainer" class="chat-container bg-gray-50 rounded-lg p-4 mb-3 flex flex-col space-y-2">
+                            <div class="flex">
+                                <div class="chat-bubble ai-bubble">
+                                    <div class="flex items-start">
+                                        <div class="flex-shrink-0">
+                                            <div class="w-6 h-6 rounded-full bg-blue-100 flex items-center justify-center text-blue-600 mr-2">
+                                                <i class="fas fa-robot text-xs"></i>
+                                            </div>
+                                        </div>
+                                        <div>
+                                            <p class="text-sm text-gray-800">
+                                                This apple shows optimal ripeness with balanced sugar content. The slight pesticide detection is below hazardous levels but consider washing thoroughly.
+                                            </p>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div class="flex justify-end">
+                                <div class="chat-bubble user-bubble">
+                                    <div class="flex items-start">
+                                        <div>
+                                            <p class="text-sm text-white">
+                                                Is this apple safe to eat?
+                                            </p>
+                                        </div>
+                                        <div class="flex-shrink-0 ml-2">
+                                            <div class="w-6 h-6 rounded-full bg-blue-600 flex items-center justify-center text-white">
+                                                <i class="fas fa-user text-xs"></i>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div class="flex">
+                                <div class="chat-bubble ai-bubble">
+                                    <div class="flex items-start">
+                                        <div class="flex-shrink-0">
+                                            <div class="w-6 h-6 rounded-full bg-blue-100 flex items-center justify-center text-blue-600 mr-2">
+                                                <i class="fas fa-robot text-xs"></i>
+                                            </div>
+                                        </div>
+                                        <div>
+                                            <p class="text-sm text-gray-800">
+                                                Yes, it's safe to eat. The pesticide level (0.12ppm) is only slightly above the recommended limit (0.1ppm). Washing under running water for 30 seconds will reduce it to safe levels. The nutritional values are excellent!
+                                            </p>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="flex space-x-2 mb-3 overflow-x-auto pb-2">
+                            <button onclick="sendQuickQuestion('Storage recommendations')" class="flex-shrink-0 text-xs bg-white border border-gray-300 rounded-full px-3 py-1 hover:bg-gray-50">
+                                Storage recommendations
+                            </button>
+                            <button onclick="sendQuickQuestion('Compare to last scan')" class="flex-shrink-0 text-xs bg-white border border-gray-300 rounded-full px-3 py-1 hover:bg-gray-50">
+                                Compare to last scan
+                            </button>
+                            <button onclick="sendQuickQuestion('Export lab report')" class="flex-shrink-0 text-xs bg-white border border-gray-300 rounded-full px-3 py-1 hover:bg-gray-50">
+                                Export lab report
+                            </button>
+                            <button onclick="sendQuickQuestion('Nutritional advice')" class="flex-shrink-0 text-xs bg-white border border-gray-300 rounded-full px-3 py-1 hover:bg-gray-50">
+                                Nutritional advice
+                            </button>
+                        </div>
+                        
+                        <div class="flex">
+                            <input id="chatInput" type="text" placeholder="Ask about this apple..." class="flex-1 border border-gray-300 rounded-l-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                            <button onclick="sendMessage()" class="bg-blue-600 hover:bg-blue-700 text-white px-4 rounded-r-lg">
+                                <i class="fas fa-paper-plane"></i>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Bottom Navigation -->
+            <div class="bg-white border-t border-gray-200 p-3 flex justify-center">
+                <button id="newScanBtn" class="fixed bottom-6 w-14 h-14 rounded-full bg-blue-600 text-white shadow-lg flex items-center justify-center hover:bg-blue-700 transition">
+                    <i class="fas fa-plus text-xl"></i>
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // DOM Elements
+        const connectionPanel = document.getElementById('connectionPanel');
+        const analysisPanel = document.getElementById('analysisPanel');
+        const detectionPanel = document.getElementById('detectionPanel');
+        const resultsPanel = document.getElementById('resultsPanel');
+        const startAnalysisBtn = document.getElementById('startAnalysisBtn');
+        const cancelAnalysisBtn = document.getElementById('cancelAnalysisBtn');
+        const confirmMaterialBtn = document.getElementById('confirmMaterialBtn');
+        const editMaterialBtn = document.getElementById('editMaterialBtn');
+        const newScanBtn = document.getElementById('newScanBtn');
+        const progressCircle = document.getElementById('progressCircle');
+        const progressPercent = document.getElementById('progressPercent');
+        const moistureValue = document.getElementById('moistureValue');
+        const acidityValue = document.getElementById('acidityValue');
+        const sugarValue = document.getElementById('sugarValue');
+        const chatContainer = document.getElementById('chatContainer');
+        const chatInput = document.getElementById('chatInput');
+        
+        // Animation variables
+        let progress = 0;
+        let animationInterval;
+        let moisture = 0;
+        let acidity = 0;
+        let sugar = 0;
+        
+        // Start analysis
+        startAnalysisBtn.addEventListener('click', () => {
+            connectionPanel.classList.add('hidden');
+            analysisPanel.classList.remove('hidden');
+            
+            // Start progress animation
+            progress = 0;
+            updateProgress();
+            animationInterval = setInterval(updateProgress, 100);
+            
+            // Simulate parameter updates
+            simulateParameterUpdates();
+        });
+        
+        // Cancel analysis
+        cancelAnalysisBtn.addEventListener('click', () => {
+            clearInterval(animationInterval);
+            connectionPanel.classList.remove('hidden');
+            analysisPanel.classList.add('hidden');
+            detectionPanel.classList.add('hidden');
+            resultsPanel.classList.add('hidden');
+        });
+        
+        // Confirm material
+        confirmMaterialBtn.addEventListener('click', () => {
+            detectionPanel.classList.add('hidden');
+            resultsPanel.classList.remove('hidden');
+        });
+        
+        // Edit material
+        editMaterialBtn.addEventListener('click', () => {
+            // In a real app, this would open a material selection dialog
+            alert('Material selection dialog would appear here');
+        });
+        
+        // New scan
+        newScanBtn.addEventListener('click', () => {
+            resultsPanel.classList.add('hidden');
+            connectionPanel.classList.remove('hidden');
+        });
+        
+        // Update progress animation
+        function updateProgress() {
+            progress += 0.5;
+            if (progress > 100) {
+                progress = 100;
+                clearInterval(animationInterval);
+                
+                // Show detection panel after analysis completes
+                setTimeout(() => {
+                    analysisPanel.classList.add('hidden');
+                    detectionPanel.classList.remove('hidden');
+                }, 500);
+            }
+            
+            const offset = 402 - (402 * progress / 100);
+            progressCircle.style.strokeDashoffset = offset;
+            progressPercent.textContent = `${Math.floor(progress)}%`;
+        }
+        
+        // Simulate parameter updates during analysis
+        function simulateParameterUpdates() {
+            let paramInterval = setInterval(() => {
+                if (progress >= 100) {
+                    clearInterval(paramInterval);
+                    moistureValue.textContent = '87.3%';
+                    acidityValue.textContent = '3.8';
+                    sugarValue.textContent = '11.2g';
+                    return;
+                }
+                
+                // Random parameter updates
+                moisture = Math.min(87.3, moisture + Math.random() * 2);
+                acidity = Math.min(3.8, acidity + Math.random() * 0.1);
+                sugar = Math.min(11.2, sugar + Math.random() * 0.5);
+                
+                moistureValue.textContent = `${moisture.toFixed(1)}%`;
+                acidityValue.textContent = acidity.toFixed(1);
+                sugarValue.textContent = `${sugar.toFixed(1)}g`;
+            }, 300);
+        }
+        
+        // AI Chatbot Functions
+        function sendMessage() {
+            const message = chatInput.value.trim();
+            if (message) {
+                // Add user message to chat
+                addMessageToChat(message, 'user');
+                chatInput.value = '';
+                
+                // Simulate AI response after a short delay
+                setTimeout(() => {
+                    const aiResponse = generateAIResponse(message);
+                    addMessageToChat(aiResponse, 'ai');
+                }, 800);
+            }
+        }
+        
+        function sendQuickQuestion(question) {
+            // Add user message to chat
+            addMessageToChat(question, 'user');
+            
+            // Simulate AI response after a short delay
+            setTimeout(() => {
+                const aiResponse = generateAIResponse(question);
+                addMessageToChat(aiResponse, 'ai');
+            }, 800);
+        }
+        
+        function addMessageToChat(message, sender) {
+            const messageElement = document.createElement('div');
+            messageElement.className = `flex ${sender === 'user' ? 'justify-end' : ''}`;
+            
+            const bubbleClass = sender === 'user' ? 'user-bubble' : 'ai-bubble';
+            
+            messageElement.innerHTML = `
+                <div class="chat-bubble ${bubbleClass}">
+                    <div class="flex items-start">
+                        ${sender === 'ai' ? `
+                        <div class="flex-shrink-0">
+                            <div class="w-6 h-6 rounded-full bg-blue-100 flex items-center justify-center text-blue-600 mr-2">
+                                <i class="fas fa-robot text-xs"></i>
+                            </div>
+                        </div>
+                        ` : ''}
+                        <div>
+                            <p class="text-sm ${sender === 'user' ? 'text-white' : 'text-gray-800'}">
+                                ${message}
+                            </p>
+                        </div>
+                        ${sender === 'user' ? `
+                        <div class="flex-shrink-0 ml-2">
+                            <div class="w-6 h-6 rounded-full bg-blue-600 flex items-center justify-center text-white">
+                                <i class="fas fa-user text-xs"></i>
+                            </div>
+                        </div>
+                        ` : ''}
+                    </div>
+                </div>
+            `;
+            
+            chatContainer.appendChild(messageElement);
+            chatContainer.scrollTop = chatContainer.scrollHeight;
+        }
+        
+        function generateAIResponse(userMessage) {
+            const responses = {
+                "Storage recommendations": "For optimal freshness, store this apple in the refrigerator crisper drawer at 1-4°C. It will maintain quality for 4-6 weeks. For short-term storage (1-2 weeks), keep at room temperature away from direct sunlight.",
+                "Compare to last scan": "Compared to your last scan (Granny Smith, 3 days ago):\n- Sugar content is 2.3g higher\n- Acidity is 0.7 pH lower\n- Moisture is similar (87.3% vs 86.9%)\n- Pesticide levels are 0.04ppm lower",
+                "Export lab report": "I've prepared a detailed lab report with all nutritional and safety parameters. You can download it as PDF or CSV from the export options above. Would you like me to email it to your registered address?",
+                "Nutritional advice": "This apple provides:\n- 14% of daily fiber needs\n- 11% of vitamin C needs\n- Low glycemic index (GI 38)\nGreat for:\n- Mid-morning snacks\n- Post-workout recovery\n- Digestive health\nPair with nuts for balanced nutrition.",
+                "Is this apple safe to eat": "Yes, it's safe to eat. The pesticide level (0.12ppm) is only slightly above the recommended limit (0.1ppm). Washing under running water for 30 seconds will reduce it to safe levels. The nutritional values are excellent!",
+                "default": "I can help you interpret the analysis results. You can ask about:\n- Nutritional benefits\n- Storage recommendations\n- Safety concerns\n- Comparison with other scans\nOr tap the quick questions above."
+            };
+            
+            // Check for exact matches first
+            if (responses[userMessage]) {
+                return responses[userMessage];
+            }
+            
+            // Check for partial matches
+            const lowerMessage = userMessage.toLowerCase();
+            if (lowerMessage.includes("store") || lowerMessage.includes("keep")) {
+                return responses["Storage recommendations"];
+            } else if (lowerMessage.includes("compare") || lowerMessage.includes("previous")) {
+                return responses["Compare to last scan"];
+            } else if (lowerMessage.includes("export") || lowerMessage.includes("report")) {
+                return responses["Export lab report"];
+            } else if (lowerMessage.includes("nutrition") || lowerMessage.includes("health")) {
+                return responses["Nutritional advice"];
+            } else if (lowerMessage.includes("safe") || lowerMessage.includes("eat")) {
+                return responses["Is this apple safe to eat"];
+            }
+            
+            // Default response
+            return responses["default"];
+        }
+        
+        // Initialize with connection panel visible
+        connectionPanel.classList.remove('hidden');
+        analysisPanel.classList.add('hidden');
+        detectionPanel.classList.add('hidden');
+        resultsPanel.classList.add('hidden');
+        
+        // Allow pressing Enter to send chat message
+        chatInput.addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') {
+                sendMessage();
+            }
+        });
+    </script>
+</body>
+</html>
