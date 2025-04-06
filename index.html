@@ -20,17 +20,6 @@
         }
         
         /* Device frame styling */
-        .device-frame {
-            position: relative;
-            width: 320px;
-            height: 640px;
-            margin: 2rem auto;
-            border: 12px solid #1e293b;
-            border-radius: 36px;
-            background: #1e293b;
-            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
-            overflow: hidden;
-        }
         
         .device-frame::before {
             content: '';
@@ -45,12 +34,34 @@
             z-index: 10;
         }
         
-        .device-screen {
-            width: 100%;
-            height: 100%;
-            object-fit: cover;
-        }
-        
+         .device-frame {
+    position: relative;
+    width: 300px; /* Adjust width as needed */
+    height: calc(300px * (1230/742)); /* Maintain 742:1230 aspect ratio */
+    margin: 2rem auto;
+    border: 12px solid #1e293b;
+    border-radius: 36px;
+    background: #1e293b;
+    box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+    overflow: hidden;
+  }
+
+  /* Ensure video fills the frame while maintaining aspect ratio */
+  .device-screen {
+    width: 100%;
+    height: 100%;
+    object-fit: contain; /* Changed from 'cover' to 'contain' */
+    background-color: #000; /* Black background for letterboxing */
+  }
+
+  /* Optional: Add slight scaling for larger displays */
+  @media (min-width: 1024px) {
+    .device-frame {
+      width: 350px;
+      height: calc(350px * (1230/742));
+    }
+  }
+
         /* Animation styles */
         .fade-in {
             animation: fadeIn 1s ease-in;
@@ -120,14 +131,14 @@
                 </div>
                 
                 <!-- Device Frame with Auto-playing Video -->
-                <div class="device-frame slide-up">
-                    <video class="device-screen" autoplay loop muted playsinline>
-                        <source src="noorasense-demo.mp4" type="video/mp4">
-                        Your browser does not support HTML5 video.
-                    </video>
-                    <!-- Fallback image if video doesn't load -->
-                    <img class="device-screen" src="noorasense-fallback.jpg" alt="NooraSense App Demo" style="display: none;">
-                </div>
+   <div class="device-frame">
+  <video class="device-screen" autoplay loop muted playsinline>
+    <source src="noorasense-demo.mp4" type="video/mp4">
+    Your browser does not support HTML5 video.
+  </video>
+  <!-- Fallback image -->
+  <img class="device-screen" src="noorasense-fallback.jpg" alt="NooraSense App Demo" style="display: none;">
+</div>
             </div>
         </div>
     </div>
